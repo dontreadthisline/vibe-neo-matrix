@@ -1,0 +1,45 @@
+# neo-rainst 配置
+# 优先级: CLI 参数 > 此文件 > XDG config
+
+[charset]
+# 字符源: katakana, ascii, binary, hex, claude 等
+source = "claude"
+
+[render]
+fps = 60
+color = "green"
+shading_mode = 0   # 0=随机, 1=距离头部渐变
+bold_mode = 1      # 0=关闭, 1=随机, 2=全部
+full_width = false
+default_bg = true  # 使用终端默认背景色
+show_status = false
+
+[rain]
+speed = 8.0
+density = 1.0
+async_scroll = false
+max_droplets_per_col = 3
+short_pct = 50.0
+die_early_pct = 33.3
+
+[glitch]
+enabled = true
+pct = 10.0     # glitch 概率百分比
+low_ms = 300
+high_ms = 400
+
+[linger]
+low_ms = 1
+high_ms = 3000
+
+[exit]
+mode = "normal"    # normal | on-key | after-secs
+secs = 10
+
+# Claude Code 集成配置
+# transcript_dir 留空则根据 CWD 自动推导
+# 例如 CWD=/a/b/c → ~/.claude/projects/-a-b-c/
+[claude]
+enabled = true
+transcript_dir = "/home/zsl/.claude/projects/-home-zsl-projects-kinds-exer-vibe-demo-vibe-neo-matrix"
+max_chars = 10000                   # 最多读取字符数
