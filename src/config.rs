@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+use crate::params::SimParams;
+
 /// Application configuration loaded from TOML
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
@@ -228,16 +230,36 @@ pub fn load_config(explicit_path: Option<&PathBuf>) -> Config {
 }
 
 fn xdg_config_path() -> Option<PathBuf> {
-    if let Ok(dir) = std::env::var("XDG_CONFIG_HOME") {
-        let p = PathBuf::from(dir).join("neo-rainst").join("config.toml");
-        return Some(p);
+    Some(dirs::config_dir()?.join("neo-rainst").join("config.toml"))
+}
+
+impl From<&Config> for SimParams {
+    fn from(cfg: &Config) -> Self {
+        SimParams {
+            charset: if cfg.charset.source.is_empty() { None } else { Some(cfg.charset.source.clone()) },
+            speed: Some(cfg.rain.speed),
+            density: Some(cfg.rain.density),
+            fps: Some(cfg.render.fps),
+            color: if cfg.render.color.is_empty() { None } else { Some(cfg.render.color.clone()) },
+            show_status: Some(cfg.render.show_status),
+            full_width: Some(cfg.render.full_width),
+            default_bg: Some(cfg.render.default_bg),
+            shading_mode: Some(cfg.render.shading_mode),
+            bold: Some(cfg.render.bold_mode),
+            async_scroll: Some(cfg.rain.async_scroll),
+            maxdpc: Some(cfg.rain.max_droplets_per_col),
+            short_pct: Some(cfg.rain.short_pct),
+            rip_pct: Some(cfg.rain.die_early_pct),
+            glitch_ms_low: Some(cfg.glitch.low_ms),
+            glitch_ms_high: Some(cfg.glitch.high_ms),
+            glitch_pct: Some(cfg.glitch.pct),
+            no_glitch: Some(!cfg.glitch.enabled),
+            linger_ms_low: Some(cfg.linger.low_ms),
+            linger_ms_high: Some(cfg.linger.high_ms),
+            screensaver: Some(false),
+            exit_on_key: Some(cfg.exit.mode == "on-key"),
+            exit_after_secs: if cfg.exit.mode == "after-secs" && cfg.exit.secs > 0.0 { Some(cfg.exit.secs) } else { None },
+            ..Default::default()
+        }
     }
-    if let Ok(home) = std::env::var("HOME") {
-        let p = PathBuf::from(home)
-            .join(".config")
-            .join("neo-rainst")
-            .join("config.toml");
-        return Some(p);
-    }
-    None
 }

@@ -7,6 +7,7 @@ use rand::Rng;
 use crate::char_source::{CharSource, BuiltinChars};
 use crate::color::{ColorMode, ColorTheme, ShadingMode, BoldMode, ThemeColors, get_theme_colors};
 use crate::droplet::{Droplet, CharLoc};
+use crate::params::SimParams;
 
 pub const CHAR_POOL_SIZE: usize = 2048;
 pub const GLITCH_POOL_SIZE: usize = 1024;
@@ -305,9 +306,8 @@ impl Cloud {
                 let thresh = self.lines / 4;
                 let new_tail = self.droplets[i].tail_put_line;
                 if col < self.col_stat.len()
-                    && prev_tail_put <= thresh
-                    && new_tail > thresh
-                    && new_tail != Droplet::SENTINEL
+                    && prev_tail_put.map_or(true, |p| p <= thresh)
+                    && new_tail.map_or(false, |n| n > thresh)
                 {
                     self.col_stat[col].can_spawn = true;
                 }
@@ -322,7 +322,7 @@ impl Cloud {
                 if col < self.col_stat.len() {
                     self.col_stat[col].num_droplets = self.col_stat[col].num_droplets.saturating_sub(1);
                     // If died early, allow respawn
-                    if self.droplets[i].tail_put_line <= self.lines / 4 {
+                    if self.droplets[i].tail_put_line.map_or(true, |t| t <= self.lines / 4) {
                         self.col_stat[col].can_spawn = true;
                     }
                 }
@@ -435,11 +435,7 @@ impl Cloud {
         }
 
         let d = &self.droplets[droplet_idx];
-        let start_line = if d.tail_put_line != Droplet::SENTINEL {
-            d.tail_put_line.saturating_add(1)
-        } else {
-            0
-        };
+        let start_line = d.tail_put_line.map_or(0, |t| t.saturating_add(1));
         let end_line = d.head_put_line;
         let col = d.bound_col;
         let cp_idx = d.char_pool_idx;
@@ -645,6 +641,83 @@ impl Cloud {
         self.async_scroll = b;
     }
 
+    /// 批量应用参数，顺序敏感：speed > density > color > 其他
+    pub fn apply_params(&mut self, p: &SimParams) {
+        // Speed (must precede density — both affect droplets_per_sec)
+        if let Some(s) = p.speed {
+            self.set_chars_per_sec(s);
+        }
+        // Density
+        if let Some(d) = p.density {
+            self.set_droplet_density(d);
+        }
+        // Color (calls reset() — must come before glitch/short/die_early changes)
+        if let Some(ref c) = p.color {
+            self.set_color(ColorTheme::from_name(c));
+        }
+        // Shading mode
+        if let Some(m) = p.shading_mode {
+            self.set_shading_mode(match m { 0 => ShadingMode::Random, _ => ShadingMode::DistanceFromHead });
+        }
+        // Bold mode
+        if let Some(b) = p.bold {
+            self.set_bold_mode(match b { 0 => BoldMode::Off, 2 => BoldMode::All, _ => BoldMode::Random });
+        }
+        // Glitch
+        if p.no_glitch.unwrap_or(false) {
+            self.set_glitchy(false);
+        } else {
+            if let Some(pct) = p.glitch_pct {
+                self.set_glitch_pct(pct / 100.0);
+            }
+            if let (Some(lo), Some(hi)) = (p.glitch_ms_low, p.glitch_ms_high) {
+                self.set_glitch_times(lo, hi);
+            } else if let Some(lo) = p.glitch_ms_low {
+                self.set_glitch_times(lo, self.glitch_high_ms);
+            } else if let Some(hi) = p.glitch_ms_high {
+                self.set_glitch_times(self.glitch_low_ms, hi);
+            }
+        }
+        // Linger
+        if let (Some(lo), Some(hi)) = (p.linger_ms_low, p.linger_ms_high) {
+            self.set_linger_times(lo, hi);
+        } else if let Some(lo) = p.linger_ms_low {
+            self.set_linger_times(lo, self.linger_high_ms);
+        } else if let Some(hi) = p.linger_ms_high {
+            self.set_linger_times(self.linger_low_ms, hi);
+        }
+        // Short / die-early
+        if let Some(pct) = p.short_pct {
+            self.set_short_pct(pct / 100.0);
+        }
+        if let Some(pct) = p.rip_pct {
+            self.set_die_early_pct(pct / 100.0);
+        }
+        // Max droplets per col
+        if let Some(m) = p.maxdpc {
+            self.set_max_droplets_per_col(m);
+        }
+        // Async
+        if p.async_scroll.unwrap_or(false) {
+            self.set_async(true);
+        }
+        // Full width / default bg
+        if p.full_width.unwrap_or(false) {
+            self.full_width = true;
+        }
+        if p.default_bg.unwrap_or(false) {
+            self.default_background = true;
+        }
+        // Screensaver
+        if p.screensaver.unwrap_or(false) {
+            self.raining = true;
+        }
+        // Message
+        if let Some(ref msg) = p.message {
+            self.set_message(msg);
+        }
+    }
+
     fn set_column_speeds(&mut self) {
         if self.async_scroll {
             for cs in &mut self.col_stat {
@@ -776,11 +849,7 @@ impl Cloud {
                 if !d.is_alive || d.bound_col != mc.col {
                     return false;
                 }
-                let tail_start = if d.tail_put_line != Droplet::SENTINEL {
-                    d.tail_put_line.saturating_add(1)
-                } else {
-                    0
-                };
+                let tail_start = d.tail_put_line.map_or(0, |t| t.saturating_add(1));
                 mc.line >= tail_start && mc.line <= d.head_put_line
             });
         }

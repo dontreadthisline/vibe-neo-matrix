@@ -3,7 +3,9 @@ mod cloud;
 mod color;
 mod config;
 mod droplet;
+mod params;
 mod render;
+mod transcript;
 
 use std::io;
 use std::path::PathBuf;
@@ -16,8 +18,9 @@ use ratatui::{DefaultTerminal, TerminalOptions, Viewport};
 
 use char_source::{parse_chars_arg, BuiltinChars, CharSource, ClaudeCharSource, FileCharSource, StdinCharSource};
 use cloud::Cloud;
-use color::{ColorMode, ColorTheme, ShadingMode, BoldMode, detect_color_mode};
-use config::{load_config, Config};
+use color::{ColorMode, ColorTheme, ShadingMode, detect_color_mode};
+use config::load_config;
+use params::SimParams;
 use render::{RainWidget, StatusBar};
 
 /// Matrix digital rain simulation — Rust port of neo
@@ -58,11 +61,57 @@ struct Args {
     #[arg(long = "status")] show_status: bool,
 }
 
+impl From<&Args> for SimParams {
+    fn from(a: &Args) -> Self {
+        SimParams {
+            charset: a.charset.clone(),
+            charset_file: a.charset_file.clone(),
+            charset_stdin: if a.charset_stdin { Some(true) } else { None },
+            chars: a.chars.clone(),
+            color: a.color.clone(),
+            speed: a.speed,
+            density: a.density,
+            fps: Some(a.fps),
+            message: a.message.clone(),
+            show_status: if a.show_status { Some(true) } else { None },
+            full_width: if a.full_width { Some(true) } else { None },
+            default_bg: if a.default_bg { Some(true) } else { None },
+            shading_mode: a.shading_mode,
+            bold: a.bold,
+            color_mode: a.color_mode_arg,
+            async_scroll: if a.async_scroll { Some(true) } else { None },
+            maxdpc: a.maxdpc,
+            short_pct: a.short_pct,
+            rip_pct: a.rip_pct,
+            glitch_pct: a.glitch_pct,
+            no_glitch: if a.no_glitch { Some(true) } else { None },
+            linger_ms_low: a.linger_ms.as_ref().and_then(|s| parse_pair(s)).map(|(lo, _)| lo),
+            linger_ms_high: a.linger_ms.as_ref().and_then(|s| parse_pair(s)).map(|(_, hi)| hi),
+            glitch_ms_low: a.glitch_ms.as_ref().and_then(|s| parse_pair(s)).map(|(lo, _)| lo),
+            glitch_ms_high: a.glitch_ms.as_ref().and_then(|s| parse_pair(s)).map(|(_, hi)| hi),
+            inline: a.inline,
+            screensaver: if a.screensaver { Some(true) } else { None },
+            exit_on_key: if a.exit_on_key { Some(true) } else { None },
+            exit_after_secs: a.exit_after_secs,
+            config_file: a.config_file.clone(),
+        }
+    }
+}
+
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
     // Load config
     let cfg = load_config(args.config_file.as_ref());
+
+    // Build SimParams: default → xdg config → project config → CLI args
+    let cli_params = SimParams::from(&args);
+    let cfg_params = SimParams::from(&cfg);
+    let merged = SimParams::default()
+        .merge(&cfg_params)
+        .merge(&cli_params);
+
+    let is_screensaver = merged.screensaver.unwrap_or(false);
 
     // Build CharSource.
     // Priority: CLI --chars > --charset-stdin > --charset-file > config charset.source > claude.enabled
@@ -108,38 +157,32 @@ fn main() -> io::Result<()> {
         }
     };
 
-    // Fullscreen mode (alternate screen) by default: use ratatui::init()
-    // which explicitly enters the alternate screen buffer.
-    // Pass --inline <LINES> for inline mode (no alternate screen).
-    let terminal = if let Some(lines) = args.inline {
+    // Terminal setup: inline or fullscreen
+    let terminal = if let Some(lines) = merged.inline {
         ratatui::init_with_options(TerminalOptions {
             viewport: Viewport::Inline(lines),
         })
     } else {
         ratatui::init()
     };
-    let result = run_app(terminal, args, cfg, char_source, transcript_dir);
+    let result = run_app(terminal, &merged, is_screensaver, char_source, transcript_dir);
     ratatui::restore();
     result
 }
 
 fn run_app(
     mut terminal: DefaultTerminal,
-    args: Args,
-    cfg: Config,
+    params: &SimParams,
+    is_screensaver: bool,
     char_source: Box<dyn CharSource>,
     transcript_dir: Option<std::path::PathBuf>,
 ) -> io::Result<()> {
-    let color_mode = if let Some(cm) = args.color_mode_arg {
-        match cm {
-            0 => ColorMode::Mono,
-            16 => ColorMode::Color16,
-            256 => ColorMode::Color256,
-            32 => ColorMode::Truecolor,
-            _ => detect_color_mode(),
-        }
-    } else {
-        detect_color_mode()
+    let color_mode = match params.color_mode {
+        Some(0) => ColorMode::Mono,
+        Some(16) => ColorMode::Color16,
+        Some(256) => ColorMode::Color256,
+        Some(32) => ColorMode::Truecolor,
+        _ => detect_color_mode(),
     };
 
     let (cols, lines) = {
@@ -149,8 +192,8 @@ fn run_app(
 
     let mut cloud = Cloud::new(lines, cols, color_mode, char_source);
 
-    // Apply CLI args (overriding config defaults)
-    apply_args(&mut cloud, &args, &cfg);
+    // Apply merged parameters
+    cloud.apply_params(params);
 
     // Store char source name and color theme for status bar display
     let char_source_name = cloud.char_source_name().to_string();
@@ -158,23 +201,16 @@ fn run_app(
 
 
     // Frame rate control
-    let fps = args.fps;
+    let fps = params.fps.unwrap_or(60.0);
     let target_period = Duration::from_secs_f64(1.0 / fps);
     let mut prev_time = Instant::now();
     let mut prev_delay = Duration::from_millis(5);
 
     // Exit-after-secs timer
     let start_time = Instant::now();
-    let exit_after = args.exit_after_secs.or_else(|| {
-        if cfg.exit.mode == "after-secs" && cfg.exit.secs > 0.0 {
-            Some(cfg.exit.secs)
-        } else {
-            None
-        }
-    });
-    let exit_on_any_key = args.exit_on_key
-        || args.screensaver
-        || cfg.exit.mode == "on-key";
+    let exit_after = params.exit_after_secs;
+    let exit_on_any_key = params.exit_on_key.unwrap_or(false)
+        || is_screensaver;
 
     // Claude mode: poll transcript dir for new sessions (every ~1s)
     let mut claude_check_time = Instant::now();
@@ -190,7 +226,7 @@ fn run_app(
                         cloud.set_raining(false);
                         break;
                     }
-                    if handle_key(key.code, &mut cloud, &args) {
+                    if handle_key(key.code, &mut cloud, is_screensaver) {
                         break;
                     }
                 }
@@ -223,7 +259,7 @@ fn run_app(
 
         // Render
         let now = Instant::now();
-        let show_status = args.show_status || cfg.render.show_status;
+        let show_status = params.show_status.unwrap_or(false);
         terminal.draw(|frame| {
             let area = frame.area();
             if show_status && area.height > 1 {
@@ -284,131 +320,6 @@ fn run_app(
     Ok(())
 }
 
-/// Apply CLI args and config values to the Cloud.
-fn apply_args(cloud: &mut Cloud, args: &Args, cfg: &Config) {
-    // Speed
-    if let Some(s) = args.speed {
-        cloud.set_chars_per_sec(s);
-    } else {
-        cloud.set_chars_per_sec(cfg.rain.speed);
-    }
-
-    // Density
-    if let Some(d) = args.density {
-        cloud.set_droplet_density(d);
-    } else {
-        cloud.set_droplet_density(cfg.rain.density);
-    }
-
-    // Color
-    if let Some(ref c) = args.color {
-        cloud.set_color(ColorTheme::from_name(c));
-    } else if !cfg.render.color.is_empty() {
-        cloud.set_color(ColorTheme::from_name(&cfg.render.color));
-    }
-
-    // Shading mode
-    if let Some(m) = args.shading_mode {
-        cloud.set_shading_mode(match m {
-            0 => ShadingMode::Random,
-            _ => ShadingMode::DistanceFromHead,
-        });
-    } else {
-        cloud.set_shading_mode(match cfg.render.shading_mode {
-            0 => ShadingMode::Random,
-            _ => ShadingMode::DistanceFromHead,
-        });
-    }
-
-    // Bold mode
-    if let Some(b) = args.bold {
-        cloud.set_bold_mode(match b {
-            0 => BoldMode::Off,
-            2 => BoldMode::All,
-            _ => BoldMode::Random,
-        });
-    } else {
-        cloud.set_bold_mode(match cfg.render.bold_mode {
-            0 => BoldMode::Off,
-            2 => BoldMode::All,
-            _ => BoldMode::Random,
-        });
-    }
-
-    // Glitch
-    if args.no_glitch || !cfg.glitch.enabled {
-        cloud.set_glitchy(false);
-    } else {
-        if let Some(p) = args.glitch_pct {
-            cloud.set_glitch_pct(p / 100.0);
-        } else {
-            cloud.set_glitch_pct(cfg.glitch.pct / 100.0);
-        }
-        if let Some(ref ms_str) = args.glitch_ms {
-            if let Some((lo, hi)) = parse_pair(ms_str) {
-                cloud.set_glitch_times(lo, hi);
-            }
-        } else {
-            cloud.set_glitch_times(cfg.glitch.low_ms, cfg.glitch.high_ms);
-        }
-    }
-
-    // Linger times
-    if let Some(ref ms_str) = args.linger_ms {
-        if let Some((lo, hi)) = parse_pair(ms_str) {
-            cloud.set_linger_times(lo, hi);
-        }
-    } else {
-        cloud.set_linger_times(cfg.linger.low_ms, cfg.linger.high_ms);
-    }
-
-    // Short pct
-    if let Some(p) = args.short_pct {
-        cloud.set_short_pct(p / 100.0);
-    } else {
-        cloud.set_short_pct(cfg.rain.short_pct / 100.0);
-    }
-
-    // Die early pct
-    if let Some(p) = args.rip_pct {
-        cloud.set_die_early_pct(p / 100.0);
-    } else {
-        cloud.set_die_early_pct(cfg.rain.die_early_pct / 100.0);
-    }
-
-    // Max droplets per column
-    if let Some(m) = args.maxdpc {
-        cloud.set_max_droplets_per_col(m);
-    } else {
-        cloud.set_max_droplets_per_col(cfg.rain.max_droplets_per_col);
-    }
-
-    // Async
-    if args.async_scroll || cfg.rain.async_scroll {
-        cloud.set_async(true);
-    }
-
-    // Full width
-    if args.full_width || cfg.render.full_width {
-        cloud.full_width = true;
-    }
-
-    // Default background
-    if args.default_bg || cfg.render.default_bg {
-        cloud.default_background = true;
-    }
-
-    // Screensaver mode
-    if args.screensaver {
-        cloud.raining = true;
-    }
-
-    // Message
-    if let Some(ref msg) = args.message {
-        cloud.set_message(msg);
-    }
-}
-
 /// Resolve the transcript directory for Claude mode.
 /// If config specifies a path, use it; otherwise auto-derive from CWD.
 fn resolve_transcript_dir(config_dir: &str) -> std::path::PathBuf {
@@ -431,10 +342,10 @@ fn parse_pair(s: &str) -> Option<(u16, u16)> {
 }
 
 /// Handle a key event. Returns true if the app should exit.
-fn handle_key(code: KeyCode, cloud: &mut Cloud, args: &Args) -> bool {
+fn handle_key(code: KeyCode, cloud: &mut Cloud, is_screensaver: bool) -> bool {
     match code {
         KeyCode::Char('q') | KeyCode::Esc => {
-            if args.screensaver {
+            if is_screensaver {
                 return true;
             }
             cloud.set_raining(false);

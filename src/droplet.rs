@@ -16,9 +16,7 @@ pub struct Droplet {
     pub is_tail_crawling: bool,
     pub bound_col: u16,
     pub head_put_line: u16,   // Head 目标行 (rendered up to this line)
-    pub head_cur_line: u16,   // Head 上次绘制行 (skip optimization)
-    pub tail_put_line: u16,   // Tail 目标行 (erased up to this line)
-    pub tail_cur_line: u16,   // Tail 上次擦除行
+    pub tail_put_line: Option<u16>,   // Tail 目标行 (erased up to this line), None = 尚未开始推进
     pub end_line: u16,        // Head stops at this line
     pub char_pool_idx: u16,   // Index into Cloud's char_pool
     pub length: u16,          // Max length of this droplet
@@ -37,22 +35,17 @@ pub enum CharLoc {
 }
 
 impl Droplet {
-    /// Sentinel value for "not set"
-    pub const SENTINEL: u16 = 0xFFFF;
-
     pub fn new() -> Self {
         Droplet {
             is_alive: false,
             is_head_crawling: false,
             is_tail_crawling: false,
-            bound_col: Self::SENTINEL,
+            bound_col: 0xFFFF,
             head_put_line: 0,
-            head_cur_line: 0,
-            tail_put_line: Self::SENTINEL,
-            tail_cur_line: 0,
-            end_line: Self::SENTINEL,
-            char_pool_idx: Self::SENTINEL,
-            length: Self::SENTINEL,
+            tail_put_line: None,
+            end_line: 0xFFFF,
+            char_pool_idx: 0xFFFF,
+            length: 0xFFFF,
             chars_per_sec: 0.0,
             last_time: Instant::now(),
             head_stop_time: Instant::now(),
@@ -73,9 +66,7 @@ impl Droplet {
         self.is_tail_crawling = true;
         self.last_time = now;
         self.head_put_line = 0;
-        self.head_cur_line = 0;
-        self.tail_put_line = Self::SENTINEL;
-        self.tail_cur_line = 0;
+        self.tail_put_line = None;
         self.head_stop_time = now;
     }
 
@@ -100,8 +91,6 @@ impl Droplet {
 
             if self.head_put_line >= self.end_line {
                 self.is_head_crawling = false;
-                // is_head_crawling guarantees we only enter here once per activation,
-                // so head_stop_time is always set at the actual stop moment.
                 self.head_stop_time = now;
                 if self.time_to_linger > Duration::ZERO {
                     self.is_tail_crawling = false;
@@ -113,12 +102,17 @@ impl Droplet {
         if self.is_tail_crawling
             && (self.head_put_line >= self.length || self.head_put_line >= self.end_line)
         {
-            if self.tail_put_line == Self::SENTINEL {
-                self.tail_put_line = chars_advanced;
-            } else {
-                self.tail_put_line = self.tail_put_line.saturating_add(chars_advanced);
+            match self.tail_put_line {
+                None => {
+                    self.tail_put_line = Some(chars_advanced);
+                }
+                Some(tail) => {
+                    self.tail_put_line = Some(tail.saturating_add(chars_advanced));
+                }
             }
-            self.tail_put_line = self.tail_put_line.min(self.end_line);
+            if let Some(tail) = self.tail_put_line {
+                self.tail_put_line = Some(tail.min(self.end_line));
+            }
         }
 
         // --- Linger 结束后恢复 Tail ---
@@ -130,8 +124,10 @@ impl Droplet {
         }
 
         // --- Tail 追上 Head → 死亡 ---
-        if self.tail_put_line != Self::SENTINEL && self.tail_put_line >= self.head_put_line {
-            self.is_alive = false;
+        if let Some(tail) = self.tail_put_line {
+            if tail >= self.head_put_line {
+                self.is_alive = false;
+            }
         }
 
         self.last_time = now;
@@ -139,9 +135,12 @@ impl Droplet {
 
     /// Determine character location type for the given line.
     pub fn char_loc(&self, line: u16) -> CharLoc {
-        if self.tail_put_line != Self::SENTINEL && line == self.tail_put_line.saturating_add(1) {
-            CharLoc::Tail
-        } else if line == self.head_put_line && self.is_head_bright() {
+        if let Some(tail) = self.tail_put_line {
+            if line == tail.saturating_add(1) {
+                return CharLoc::Tail;
+            }
+        }
+        if line == self.head_put_line && self.is_head_bright() {
             CharLoc::Head
         } else {
             CharLoc::Middle
@@ -163,9 +162,6 @@ impl Droplet {
     /// For pausing: increment the last_time to prevent time jump after resume.
     pub fn increment_time(&mut self, delta: Duration) {
         self.last_time += delta;
-        if self.head_stop_time > Instant::now() - Duration::from_secs(3600) {
-            // Only adjust if head_stop_time was set
-        }
         self.head_stop_time += delta;
     }
 }
@@ -208,7 +204,7 @@ mod tests {
         d.advance(later);
         assert_eq!(d.head_put_line, 10);
         // Tail won't start yet because head_put_line (10) < length (20)
-        assert_eq!(d.tail_put_line, Droplet::SENTINEL);
+        assert!(d.tail_put_line.is_none(), "tail should not have started yet, got {:?}", d.tail_put_line);
         assert!(d.is_alive);
         assert!(d.is_head_crawling);
 
@@ -239,6 +235,14 @@ mod tests {
         fill_and_activate(&mut d, 0, 5, 0, 100, 100.0, Duration::ZERO, now);
         // Very fast advance — tail will catch head
         d.advance(now + Duration::from_secs(1));
-        assert!(!d.is_alive || d.tail_put_line >= d.head_put_line);
+        assert!(!d.is_alive || d.tail_put_line.map_or(false, |t| t >= d.head_put_line));
+    }
+
+    #[test]
+    fn test_tail_put_line_is_none_after_activate() {
+        let mut d = Droplet::new();
+        let now = Instant::now();
+        fill_and_activate(&mut d, 0, 10, 0, 100, 10.0, Duration::ZERO, now);
+        assert!(d.tail_put_line.is_none(), "tail should be None right after activate");
     }
 }

@@ -4,7 +4,6 @@ use ratatui::style::{Color, Style};
 use ratatui::widgets::Widget;
 
 use crate::cloud::Cloud;
-use crate::droplet::Droplet;
 
 /// Custom ratatui Widget that renders the entire Matrix rain effect.
 ///
@@ -46,11 +45,7 @@ impl<'a> Widget for RainWidget<'a> {
             // Use tail_put_line for the visible range (not tail_cur_line,
             // which is a NCurses skip-optimization concept that doesn't
             // apply with ratatui's double-buffering).
-            let tail_start = if droplet.tail_put_line != Droplet::SENTINEL {
-                droplet.tail_put_line.saturating_add(1)
-            } else {
-                0
-            };
+            let tail_start = droplet.tail_put_line.map_or(0, |t| t.saturating_add(1));
             let head_end = droplet.head_put_line;
 
             for line in tail_start..=head_end {
