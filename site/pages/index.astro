@@ -1,0 +1,366 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+---
+
+<StarlightPage frontmatter={{ title: 'neo-rainst', template: 'splash' }}>
+  <div class="landing">
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="hero-title">neo-rainst</h1>
+        <p class="hero-tagline">终端里的 Matrix 数字雨。用 Rust + ratatui 重写，支持自定义字符源和 Claude Code 会话渲染。</p>
+        <div class="hero-actions">
+          <a href="/vibe-neo-matrix/getting-started/" class="btn-primary">快速开始</a>
+          <a href="https://github.com/dontreadthisline/vibe-neo-matrix" class="btn-secondary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SCREENSHOT ===== -->
+    <section class="screenshot">
+      <div class="container">
+        <img src="/vibe-neo-matrix/screenshot.png" alt="neo-rainst 终端截图" class="screenshot-img" />
+      </div>
+    </section>
+
+    <!-- ===== FEATURE WITH CODE DEMO ===== -->
+    <section class="feature-demo">
+      <div class="container">
+        <h2>一行命令，终端变身 Matrix 屏幕</h2>
+        <p class="feature-desc">用片假名、ASCII、二进制或你的 Claude Code 对话记录，在终端中渲染经典的绿色数字雨。</p>
+        <div class="code-panels">
+          <div class="code-panel code-before">
+            <div class="panel-label">安装</div>
+            <pre><code>{`cargo install --git https://github.com/dontreadthisline/vibe-neo-matrix.git`}</code></pre>
+          </div>
+          <div class="code-panel code-after">
+            <div class="panel-label">运行</div>
+            <pre><code>{`neo-rainst --charset katakana --color green \\
+  --speed 8.0 --density 1.0 \\
+  --message "Wake up, Neo..."`}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FEATURE CARDS GRID ===== -->
+    <section class="feature-cards">
+      <div class="container">
+        <h2>为什么选择 neo-rainst</h2>
+        <div class="cards-grid">
+          <div class="card">
+            <h3>多字符源</h3>
+            <p>内置 katakana、ascii、binary、hex、greek、cyrillic、braille 等 13+ 种字符集，支持从文件或 stdin 加载自定义字符。</p>
+          </div>
+          <div class="card">
+            <h3>Claude Code 集成</h3>
+            <p>自动提取 Claude Code 对话记录，将你和 AI 的交流实时渲染成数字雨。SessionEnd hook 触发，无缝衔接。</p>
+          </div>
+          <div class="card">
+            <h3>16 种颜色主题</h3>
+            <p>从经典绿色到 rainbow、vaporwave、gold、pink，支持 truecolor / 256 色 / 16 色自动检测。</p>
+          </div>
+          <div class="card">
+            <h3>交互式控制</h3>
+            <p>空格重置、p 暂停、方向键调速、Tab 切换着色模式、数字键切换颜色主题。一切尽在键盘。</p>
+          </div>
+          <div class="card">
+            <h3>灵活配置</h3>
+            <p>CLI 参数、项目级 .neo-rainst.toml、XDG 用户配置三级覆盖。精确控制速度、密度、故障效果、渐隐时间。</p>
+          </div>
+          <div class="card">
+            <h3>多种运行模式</h3>
+            <p>全屏模式、内联模式、屏保模式、定时退出、任意键退出。适配演示、屏保、终端美化等场景。</p>
+          </div>
+          <div class="card">
+            <h3>消息揭示效果</h3>
+            <p>输入 --message "Wake up, Neo..." 让数字雨如电影般揭示隐藏文字，营造经典 Matrix 氛围。</p>
+          </div>
+          <div class="card">
+            <h3>轻量高性能</h3>
+            <p>Rust 编写，基于 ratatui 和 crossterm。极低资源占用，流畅 60fps 动画，精准帧率控制。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CTA ===== -->
+    <section class="cta">
+      <div class="container">
+        <h2>开始使用</h2>
+        <div class="cta-cards">
+          <div class="cta-card">
+            <h3>通过 Cargo 安装</h3>
+            <pre><code>{`cargo install --git https://github.com/dontreadthisline/vibe-neo-matrix.git`}</code></pre>
+          </div>
+          <div class="cta-card">
+            <h3>或使用一键安装脚本</h3>
+            <pre><code>{`curl -fsSL https://raw.githubusercontent.com/dontreadthisline/vibe-neo-matrix/master/install.sh | bash`}</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+      <p>Copyright &copy; {new Date().getFullYear()}. Powered by <a href="https://starlight.astro.build/">Starlight</a>.</p>
+    </footer>
+  </div>
+</StarlightPage>
+
+<style>
+  .landing {
+    padding: 0;
+  }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 5rem 1.5rem 3rem;
+  }
+  .hero-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: var(--sl-color-white);
+    margin: 0 0 1rem;
+    letter-spacing: -0.02em;
+  }
+  .hero-tagline {
+    font-size: 1.25rem;
+    color: var(--sl-color-gray-3);
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--sl-color-text-accent);
+    color: var(--sl-color-black);
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover {
+    opacity: 0.85;
+  }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--sl-color-gray-5);
+    color: var(--sl-color-white);
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .btn-secondary:hover {
+    background: var(--sl-color-gray-4);
+  }
+
+  /* Screenshot */
+  .screenshot {
+    padding: 0 0 3rem;
+  }
+  .screenshot-img {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    display: block;
+  }
+
+  /* Feature demo */
+  .feature-demo {
+    padding: 4rem 0;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  .feature-demo h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin: 0 0 0.5rem;
+  }
+  .feature-desc {
+    color: var(--sl-color-gray-3);
+    margin: 0 0 2rem;
+    font-size: 1.1rem;
+  }
+  .code-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  .code-panel {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid var(--sl-color-gray-5);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .panel-label {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-3);
+    border-bottom: 1px solid var(--sl-color-gray-5);
+  }
+  .code-panel pre {
+    padding: 1rem;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background: var(--sl-color-gray-7) !important;
+    flex: 1;
+  }
+
+  /* Feature cards */
+  .feature-cards {
+    padding: 4rem 0;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  .feature-cards h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin: 0 0 2rem;
+    text-align: center;
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    grid-auto-rows: 1fr;
+  }
+  .card {
+    padding: 1.5rem;
+    margin: 0;
+    border-radius: 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-gray-7, var(--sl-color-gray-6));
+    transition: border-color 0.15s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .card:hover {
+    border-color: var(--sl-color-gray-3);
+  }
+  .card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin: 0 0 0.5rem;
+  }
+  .card p {
+    font-size: 0.95rem;
+    color: var(--sl-color-gray-3);
+    margin: 0;
+    line-height: 1.5;
+    flex: 1;
+  }
+
+  /* CTA */
+  .cta {
+    padding: 4rem 0;
+    border-top: 1px solid var(--sl-color-gray-5);
+  }
+  .cta h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin: 0 0 2rem;
+    text-align: center;
+  }
+  .cta-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+  .cta-card {
+    padding: 1.5rem;
+    margin: 0;
+    border-radius: 0.75rem;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-gray-6);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .cta-card h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sl-color-white);
+    margin: 0 0 1rem;
+  }
+  .cta-card pre {
+    padding: 0.75rem 1rem;
+    margin: 0;
+    border-radius: 0.5rem;
+    background: var(--sl-color-gray-7) !important;
+    font-size: 0.9rem;
+    overflow-x: auto;
+  }
+  .cta-card p {
+    margin: 0;
+  }
+  .cta-card a {
+    color: var(--sl-color-text-accent);
+  }
+
+  /* Footer */
+  .footer {
+    padding: 2rem 0;
+    border-top: 1px solid var(--sl-color-gray-5);
+    text-align: center;
+    color: var(--sl-color-gray-3);
+    font-size: 0.9rem;
+  }
+  .footer a {
+    color: var(--sl-color-text-accent);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .code-panels {
+      grid-template-columns: 1fr;
+    }
+    .hero {
+      padding: 3rem 1rem 2rem;
+    }
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<style is:global>
+  html:not([data-has-sidebar]) .content-panel:has(#_top) {
+    display: none;
+  }
+</style>

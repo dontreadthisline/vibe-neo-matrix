@@ -1,0 +1,68 @@
+---
+title: 颜色主题
+description: neo-rainst 支持的全部颜色主题和颜色模式
+---
+
+neo-rainst 提供 16 种颜色主题，支持自动检测终端颜色能力（truecolor / 256 色 / 16 色）。
+
+## 可用主题
+
+| 名称 | 键盘快捷键 | 说明 |
+|------|-----------|------|
+| `green` | `1` | 经典 Matrix 绿色（默认） |
+| `green2` | `2` | 绿色变体 2 |
+| `green3` | `3` | 绿色变体 3（亮绿） |
+| `gold` | `4` | 金色 |
+| `pink2` | `5` | 粉色 2 |
+| `red` | `6` | 红色 |
+| `blue` | `7` | 蓝色 |
+| `cyan` | `8` | 青色 |
+| `purple` | `9` | 紫色 |
+| `gray` | `0` | 灰色 |
+| `rainbow` | `!` | 彩虹色 |
+| `yellow` | `@` | 黄色 |
+| `orange` | `#` | 橙色 |
+| `pink` | `$` | 粉色 |
+| `vaporwave` | `%` | 蒸汽波风格 |
+
+## 命令行使用
+
+```bash
+neo-rainst --color rainbow
+neo-rainst -c blue
+neo-rainst --color vaporwave
+```
+
+## 配置文件
+
+```toml
+[render]
+color = "rainbow"
+```
+
+## 颜色模式
+
+neo-rainst 自动检测终端颜色能力：
+
+- **Truecolor** (32): 检测 `COLORTERM=truecolor` 或 `COLORTERM=24bit`
+- **256 色**: 检测 `TERM` 包含 `256color`
+- **16 色**: 回退模式
+
+也可以手动指定：
+
+```bash
+neo-rainst --colormode 32  # 强制 truecolor
+neo-rainst --colormode 256 # 强制 256 色
+neo-rainst --colormode 16  # 强制 16 色
+```
+
+## 着色模式
+
+通过 `Tab` 键或 `--shadingmode` 参数切换雨滴的着色方式：
+
+- **随机** (`0`): 每个字符随机分配颜色
+- **距离头部渐变** (`1`): 头部最亮，尾部逐渐变暗（默认）
+
+```bash
+neo-rainst --shadingmode 1
+```

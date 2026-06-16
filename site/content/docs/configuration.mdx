@@ -1,0 +1,112 @@
+---
+title: 配置
+description: neo-rainst 配置文件格式和优先级
+---
+
+neo-rainst 支持三级配置覆盖，优先级从高到低：
+
+1. **CLI 参数** — 命令行直接指定
+2. **项目级配置** — 当前目录下的 `.neo-rainst.toml`
+3. **XDG 用户配置** — `~/.config/neo-rainst/config.toml`
+
+## 配置文件示例
+
+```toml
+# neo-rainst 配置
+# 优先级: CLI 参数 > .neo-rainst.toml > ~/.config/neo-rainst/config.toml
+
+[charset]
+# 字符源: katakana, ascii, binary, hex, claude 等
+source = "katakana"
+
+[render]
+fps = 60
+color = "green"
+shading_mode = 0   # 0 = 随机, 1 = 距离头部渐变
+bold_mode = 1      # 0 = 关闭, 1 = 随机, 2 = 全部
+full_width = false
+default_bg = true  # 使用终端默认背景色
+show_status = false
+
+[rain]
+speed = 8.0
+density = 1.0
+async_scroll = false
+max_droplets_per_col = 3
+short_pct = 50.0
+die_early_pct = 33.3
+
+[glitch]
+enabled = true
+pct = 10.0          # 故障效果百分比
+low_ms = 300         # 故障持续时间（毫秒）
+high_ms = 400
+
+[linger]
+low_ms = 1            # 字符停留时间（毫秒）
+high_ms = 3000
+
+[exit]
+mode = "normal"       # "normal" | "on-key" | "after-secs"
+secs = 0.0            # exit.mode = "after-secs" 时有效
+
+[claude]
+enabled = false
+transcript_dir = ""   # 留空则根据 CWD 自动推导
+max_chars = 10000
+```
+
+## 配置字段说明
+
+### `[charset]`
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `source` | string | `"katakana"` | 字符源名称，或 `file:/path/to/file` 加载文件 |
+
+### `[render]`
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `fps` | float | `60.0` | 帧率 |
+| `color` | string | `"green"` | 颜色主题 |
+| `shading_mode` | int | `0` | 着色模式: 0=随机, 1=距离头部渐变 |
+| `bold_mode` | int | `1` | 粗体模式: 0=关闭, 1=随机, 2=全部 |
+| `full_width` | bool | `false` | 全宽字符模式 |
+| `default_bg` | bool | `true` | 使用终端默认背景色 |
+| `show_status` | bool | `false` | 显示底部状态栏 |
+
+### `[rain]`
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `speed` | float | `8.0` | 下落速度（字符/秒） |
+| `density` | float | `1.0` | 雨滴密度 |
+| `async_scroll` | bool | `false` | 异步滚动 |
+| `max_droplets_per_col` | int | `3` | 每列最大雨滴数 |
+| `short_pct` | float | `50.0` | 短雨滴百分比 |
+| `die_early_pct` | float | `33.3` | 提前消失百分比 |
+
+### `[glitch]`
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | bool | `true` | 启用故障效果 |
+| `pct` | float | `10.0` | 故障百分比 |
+| `low_ms` | int | `300` | 最小故障持续时间 |
+| `high_ms` | int | `400` | 最大故障持续时间 |
+
+### `[exit]`
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `mode` | string | `"normal"` | 退出模式: normal / on-key / after-secs |
+| `secs` | float | `0.0` | mode=after-secs 时的秒数 |
+
+### `[claude]`
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | bool | `false` | 启用 Claude Code 字符源 |
+| `transcript_dir` | string | `""` | Transcript 目录，留空自动推导 |
+| `max_chars` | int | `10000` | 最大加载字符数 |

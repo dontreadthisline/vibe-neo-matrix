@@ -1,0 +1,69 @@
+---
+title: 快速开始
+description: 安装并运行 neo-rainst 终端数字雨
+---
+
+neo-rainst 是一个用 Rust 编写的终端 Matrix 数字雨模拟器，基于 [ratatui](https://ratatui.rs/) 和 [crossterm](https://github.com/crossterm-rs/crossterm)。
+
+## 安装
+
+### 通过 Cargo（推荐）
+
+```bash
+cargo install --git https://github.com/dontreadthisline/vibe-neo-matrix.git
+```
+
+### 一键安装脚本
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dontreadthisline/vibe-neo-matrix/master/install.sh | bash
+```
+
+### 从源码构建
+
+```bash
+git clone https://github.com/dontreadthisline/vibe-neo-matrix.git
+cd vibe-neo-matrix
+cargo build --release
+./target/release/neo-rainst
+```
+
+## 基本用法
+
+```bash
+# 默认启动（片假名 + 经典绿色）
+neo-rainst
+
+# 指定字符集和颜色
+neo-rainst --charset ascii --color cyan
+
+# 显示消息揭示效果
+neo-rainst --message "Wake up, Neo..."
+
+# 屏保模式（按任意键退出）
+neo-rainst --screensaver
+
+# 30 秒后自动退出
+neo-rainst --exit-after-secs 30
+```
+
+## 键盘控制
+
+| 按键 | 功能 |
+|------|------|
+| `q` / `Esc` | 退出 |
+| `空格` | 重置数字雨 |
+| `p` | 暂停 / 继续 |
+| `↑` / `↓` | 加速 / 减速 |
+| `←` / `→` | 减少 / 增加故障效果比例 |
+| `Tab` | 切换着色模式 |
+| `a` | 切换异步滚动 |
+| `-` / `+` | 减少 / 增加雨滴密度 |
+| `1` - `0` | 切换颜色主题 |
+| `!` - `%` | 切换更多颜色主题 |
+
+## 下一步
+
+- 查看 [配置参考](/vibe-neo-matrix/configuration/) 了解 TOML 配置文件
+- 查看 [Claude Code 集成](/vibe-neo-matrix/claude-integration/) 将对话渲染为数字雨
+- 查看 [CLI 参数](/vibe-neo-matrix/reference/cli/) 了解所有命令行选项

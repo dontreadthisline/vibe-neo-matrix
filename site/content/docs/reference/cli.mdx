@@ -1,0 +1,78 @@
+---
+title: CLI 参数
+description: neo-rainst 完整命令行参数参考
+---
+
+## 字符源
+
+| 参数 | 说明 |
+|------|------|
+| `--charset <NAME>` | 字符集名称: katakana, ascii, binary, hex, claude 等 |
+| `--charset-file <FILE>` | 从文件加载字符 |
+| `--charset-stdin` | 从 stdin 读取字符 |
+| `--chars <RANGE>` | Unicode 码点范围，如 `0x3040,0x309F` |
+
+## 渲染控制
+
+| 参数 | 说明 |
+|------|------|
+| `-c, --color <COLOR>` | 颜色主题: green, blue, cyan, rainbow 等 |
+| `-S, --speed <NUM>` | 下落速度，默认 8.0 |
+| `-d, --density <NUM>` | 雨滴密度，默认 1.0 |
+| `-f, --fps <NUM>` | 帧率，默认 60 |
+| `-m, --message <STR>` | 消息文字（雨滴揭示效果） |
+| `--status` | 显示底部状态栏 |
+
+## 着色与样式
+
+| 参数 | 说明 |
+|------|------|
+| `-M, --shadingmode <NUM>` | 0=随机, 1=距离头部渐变 |
+| `-b, --bold <NUM>` | 粗体模式: 0=关闭, 1=随机, 2=全部 |
+| `-C, --colorfile <FILE>` | 自定义颜色配置文件 |
+| `-D, --defaultbg` | 使用终端默认背景色 |
+| `-F, --fullwidth` | 全宽字符模式 |
+| `--colormode <NUM>` | 颜色模式: 0=单色, 16=16色, 256=256色, 32=truecolor |
+
+## 运行模式
+
+| 参数 | 说明 |
+|------|------|
+| `--inline <LINES>` | 内联模式，不占用全屏（指定行数） |
+| `--screensaver` | 屏保模式，任意键退出 |
+| `--exit-on-key` | 任意键退出 |
+| `--exit-after-secs <N>` | N 秒后自动退出 |
+| `--config <FILE>` | 指定配置文件路径 |
+
+## 雨滴行为
+
+| 参数 | 说明 |
+|------|------|
+| `--maxdpc <NUM>` | 每列最大雨滴数 |
+| `--shortpct <NUM>` | 短雨滴百分比 |
+| `-r, --rippct <NUM>` | 提前消失百分比 |
+| `-a, --async` | 异步滚动模式 |
+
+## 故障效果
+
+| 参数 | 说明 |
+|------|------|
+| `-g, --glitchms <LOW,HIGH>` | 故障持续时间范围（ms） |
+| `-G, --glitchpct <NUM>` | 故障百分比 |
+| `--noglitch` | 禁用故障效果 |
+
+## 示例
+
+```bash
+# 二进制数字雨，蓝色主题
+neo-rainst --charset binary --color blue
+
+# 从文件加载字符
+neo-rainst --charset-file ~/my-chars.txt
+
+# 全宽片假名 + 状态栏
+neo-rainst --charset katakana -F --status
+
+# 屏保模式
+neo-rainst --screensaver --message "Wake up, Neo..."
+```
