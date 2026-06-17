@@ -1,12 +1,3 @@
-mod char_source;
-mod cloud;
-mod color;
-mod config;
-mod droplet;
-mod params;
-mod render;
-mod transcript;
-
 use std::io;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -16,12 +7,12 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::{DefaultTerminal, TerminalOptions, Viewport};
 
-use char_source::{parse_chars_arg, BuiltinChars, CharSource, ClaudeCharSource, FileCharSource, StdinCharSource};
-use cloud::Cloud;
-use color::{ColorMode, ColorTheme, ShadingMode, detect_color_mode};
-use config::load_config;
-use params::SimParams;
-use render::{RainWidget, StatusBar};
+use neo_rainst::char_source::{parse_chars_arg, BuiltinChars, CharSource, ClaudeCharSource, FileCharSource, StdinCharSource};
+use neo_rainst::cloud::Cloud;
+use neo_rainst::color::{ColorMode, ColorTheme, ShadingMode, detect_color_mode};
+use neo_rainst::config::load_config;
+use neo_rainst::params::SimParams;
+use neo_rainst::render::{RainWidget, StatusBar};
 
 /// Matrix digital rain simulation — Rust port of neo
 #[derive(Parser, Debug)]

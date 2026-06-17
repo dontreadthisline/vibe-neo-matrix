@@ -3,12 +3,14 @@ use std::time::{Duration, Instant};
 /// Droplet 状态机 —— 单列雨滴的完整生命周期
 ///
 /// ## 生命周期
-/// ```
+///
 /// Activate → Head 向下推进 → Head 到达 endLine 停止
-///          → Tail 暂停 (linger 期间)
-///          → Linger 时间到 → Tail 恢复推进
-///          → Tail 追上 Head → Droplet 死亡
-/// ```
+///
+/// → Tail 暂停 (linger 期间)
+///
+/// → Linger 时间到 → Tail 恢复推进
+///
+/// → Tail 追上 Head → Droplet 死亡
 #[derive(Debug)]
 pub struct Droplet {
     pub is_alive: bool,
