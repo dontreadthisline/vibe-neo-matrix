@@ -106,7 +106,7 @@ struct ThemeDef {
     rgb: Vec<[u8; 3]>,
 }
 
-const THEMES_TOML: &str = include_str!("colors.toml");
+const THEMES_TOML: &str = include_str!("../colors.toml");
 
 fn load_theme_data() -> HashMap<String, ThemeDef> {
     toml::from_str::<ThemesFile>(THEMES_TOML)
