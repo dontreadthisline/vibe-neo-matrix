@@ -2,6 +2,8 @@ use std::io;
 use std::path::PathBuf;
 use std::time::SystemTime;
 
+use crate::char_source::is_emoji;
+
 /// 文本提取策略
 #[derive(Debug, Clone)]
 pub enum TranscriptFormat {
@@ -144,7 +146,7 @@ impl TranscriptCharSource {
         };
 
         let chars: Vec<char> = all_text.chars()
-            .filter(|c| !c.is_control())
+            .filter(|c| !c.is_control() && !is_emoji(*c))
             .collect();
         let start = if chars.len() > self.max_chars {
             chars.len() - self.max_chars

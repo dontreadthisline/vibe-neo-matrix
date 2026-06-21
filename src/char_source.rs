@@ -109,6 +109,60 @@ impl BuiltinChars {
     }
 }
 
+/// 判断一个字符是否为 emoji 符号。
+///
+/// 覆盖主要的 emoji Unicode 区块：Supplemental Symbols & Pictographs、
+/// Emoticons、Dingbats、Miscellaneous Symbols、Variation Selectors、
+/// Regional Indicators 等。
+pub fn is_emoji(c: char) -> bool {
+    let cp = c as u32;
+    // 排除 ASCII 范围，避免误判
+    if cp <= 0x7F {
+        return false;
+    }
+    matches!(cp,
+        // Supplemental Symbols and Pictographs (U+1F900–U+1F9FF)
+        0x1F900..=0x1F9FF
+        // Emoticons (U+1F600–U+1F64F)
+        | 0x1F600..=0x1F64F
+        // Miscellaneous Symbols and Pictographs (U+1F300–U+1F5FF)
+        | 0x1F300..=0x1F5FF
+        // Transport and Map Symbols (U+1F680–U+1F6FF)
+        | 0x1F680..=0x1F6FF
+        // Symbols and Pictographs Extended-A (U+1FA70–U+1FAFF)
+        | 0x1FA70..=0x1FAFF
+        // Chess Symbols, Geometric Shapes Extended (U+1FA00–U+1FA6F)
+        | 0x1FA00..=0x1FA6F
+        // Regional Indicator Symbols (U+1F1E0–U+1F1FF)
+        | 0x1F1E0..=0x1F1FF
+        // Miscellaneous Symbols (U+2600–U+26FF)
+        | 0x2600..=0x26FF
+        // Dingbats (U+2700–U+27BF)
+        | 0x2700..=0x27BF
+        // Variation Selectors (U+FE00–U+FE0F)
+        | 0xFE00..=0xFE0F
+        // Zero Width Joiner (U+200D)
+        | 0x200D
+        // Combining Enclosing Keycap (U+20E3)
+        | 0x20E3
+        // Additional single emoji codepoints
+        | 0x231A..=0x231B   // watch, hourglass
+        | 0x23E9..=0x23F3   // double arrows, hourglass with sand
+        | 0x23F8..=0x23FA   // power symbols
+        | 0x25AA..=0x25AB   // small squares
+        | 0x25B6 | 0x25C0   // play/rewind triangles
+        | 0x25FB..=0x25FE   // medium squares
+        | 0x2934..=0x2935   // curved arrows
+        | 0x2B05..=0x2B07   // arrows
+        | 0x2B1B..=0x2B1C   // large squares
+        | 0x2B50 | 0x2B55   // star, no-entry
+        | 0x3030 | 0x303D   // wavy dash, part alternation
+        | 0x3297 | 0x3299   // circled ideographs
+        | 0x00A9 | 0x00AE   // copyright, registered
+        | 0x2122 | 0x2139   // TM, info
+    )
+}
+
 /// Parse a `--chars` argument string into Unicode code-point range pairs.
 /// Format: even number of hex values separated by commas, like `0x3040,0x309F`.
 /// Original neo only supports hex literals; we accept decimal and octal too.
@@ -284,5 +338,43 @@ mod tests {
         };
         source.load_from_reader(Cursor::new(data)).unwrap();
         assert_eq!(source.chars().len(), 9);
+    }
+
+    #[test]
+    fn test_is_emoji_detects_smiley() {
+        assert!(is_emoji('\u{1F600}'));  // Grinning face
+        assert!(is_emoji('\u{1F60D}'));  // Heart eyes
+        assert!(is_emoji('\u{1F609}'));  // Wink
+    }
+
+    #[test]
+    fn test_is_emoji_detects_symbols() {
+        assert!(is_emoji('\u{1F4A9}'));  // Pile of poo
+        assert!(is_emoji('\u{1F389}'));  // Party popper
+        assert!(is_emoji('\u{2705}'));   // Check mark
+        assert!(is_emoji('\u{26A0}'));   // Warning
+    }
+
+    #[test]
+    fn test_is_emoji_rejects_ascii() {
+        assert!(!is_emoji('A'));
+        assert!(!is_emoji('z'));
+        assert!(!is_emoji('0'));
+        assert!(!is_emoji('.'));
+        assert!(!is_emoji('!'));
+    }
+
+    #[test]
+    fn test_is_emoji_rejects_cjk() {
+        assert!(!is_emoji('\u{4E2D}'));  // 中
+        assert!(!is_emoji('\u{6587}'));  // 文
+        assert!(!is_emoji('\u{30A2}'));  // ア (katakana)
+    }
+
+    #[test]
+    fn test_is_emoji_rejects_newline_and_control() {
+        assert!(!is_emoji('\n'));
+        assert!(!is_emoji('\t'));
+        assert!(!is_emoji('\u{0000}'));
     }
 }
