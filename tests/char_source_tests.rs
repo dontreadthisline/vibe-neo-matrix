@@ -42,6 +42,26 @@ fn test_transcript_dir_from_cwd_root() {
 }
 
 #[test]
+fn test_transcript_dir_from_cwd_hidden_dir() {
+    // Claude Code 对以 . 开头的隐藏目录有特殊处理
+    let dir = flatten_cwd("/home/zsl/.config");
+    assert_eq!(dir, "-home-zsl--config");
+}
+
+#[test]
+fn test_transcript_dir_from_cwd_multiple_hidden() {
+    let dir = flatten_cwd("/home/zsl/.local/share/.cache");
+    assert_eq!(dir, "-home-zsl--local-share--cache");
+}
+
+#[test]
+fn test_transcript_dir_from_cwd_hidden_with_underscore() {
+    // 隐藏目录中的 _ 也要替换为 -
+    let dir = flatten_cwd("/home/zsl/.my_config/projects");
+    assert_eq!(dir, "-home-zsl--my-config-projects");
+}
+
+#[test]
 fn test_extract_text_from_user_entry() {
     let json = serde_json::json!({
         "type": "user",

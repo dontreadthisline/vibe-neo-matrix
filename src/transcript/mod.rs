@@ -56,10 +56,42 @@ pub fn extract_claude_jsonl_entry(entry: &serde_json::Value) -> String {
     text
 }
 
-/// CWD 路径 → Claude Code 风格目录名
-/// `/home/user/my_proj` → `-home-user-my-proj`
+/// CWD 路径 → Claude Code 风格目录名。
+///
+/// Claude Code 的命名规则：
+/// - 去掉前导 `/`，剩余部分按 `/` 拆分
+/// - 每个路径段中的 `_` 替换为 `-`
+/// - 段之间用 `-` 连接，最终前缀 `-`
+/// - **隐藏目录（以 `.` 开头）特殊处理**：去掉前导 `.`，并在段前额外添加一个 `-`
+///
+/// 示例：
+/// - `/home/user/my_proj` → `-home-user-my-proj`
+/// - `/home/user/.config`  → `-home-user--config`
+/// - `/home/user/.cache/a` → `-home-user--cache-a`
 pub fn flatten_cwd(cwd: &str) -> String {
-    format!("-{}", cwd.trim_start_matches('/').replace(['/', '_'], "-"))
+    let mut result = String::new();
+    for seg in cwd.trim_start_matches('/').split('/') {
+        if seg.is_empty() {
+            continue;
+        }
+        let normalized = seg.replace('_', "-");
+        if let Some(stripped) = normalized.strip_prefix('.') {
+            // 隐藏目录：去掉前导 . 并额外添加一个 -
+            result.push('-');
+            if !stripped.is_empty() {
+                result.push('-');
+                result.push_str(stripped);
+            }
+        } else {
+            result.push('-');
+            result.push_str(&normalized);
+        }
+    }
+    // 根目录 `/` → trim 后为空，split 无有效段，返回 `-`
+    if result.is_empty() {
+        result.push('-');
+    }
+    result
 }
 
 pub struct TranscriptCharSource {
